@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>manim-ui · 数学可视化</title>
+<link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- 左侧：场景库 -->
+  <aside id="left">
+    <header class="brand">
+      <div class="brand-row">
+        <h1 data-i18n="app.name">manim-ui</h1>
+        <div id="lang-switch" class="lang-switch"></div>
+      </div>
+      <p class="sub" data-i18n="app.tagline"></p>
+    </header>
+
+    <!-- 模块切换（由 registry.js 注册） -->
+    <div id="module-tabs" class="module-tabs"></div>
+
+    <div class="pane-label" data-i18n="pane.presets"></div>
+    <div id="scenes" class="scenes"></div>
+
+    <div class="pane-label" data-i18n="pane.env"></div>
+    <div id="device" class="device" data-i18n="device.detecting"></div>
+    <pre id="log" class="log"></pre>
+  </aside>
+
+  <!-- 中间：画布 -->
+  <main id="stage">
+    <canvas id="view"></canvas>
+    <div id="hint" class="hint" data-i18n="hint.canvas"></div>
+  </main>
+
+  <!-- 右侧：参数 -->
+  <aside id="right">
+    <div class="pane-label" data-i18n="pane.params"></div>
+    <div id="params" class="params"></div>
+  </aside>
+
+</div>
+
+<!-- 致命错误面板 -->
+<div id="fatal" style="display:none">
+  <div class="fatal-box">
+    <h2 id="fatal-title"></h2>
+    <div id="fatal-body"></div>
+    <p class="fatal-tip" data-i18n-html="fatal.tip"></p>
+  </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

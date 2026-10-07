@@ -1,0 +1,61 @@
+# ============================================================
+#  manim-ui / .gitignore
+#  仓库只收「能跑起来的那套东西」：
+#  启动脚本 + 本地服务器 + 上游着色器 + 前端 + 文档配图。
+#  开发期产物、本机路径、对外稿件一律不入库。
+# ============================================================
+
+# ---------- 工作区 / 会话工具产物 ----------
+.workbuddy/
+.idea/
+.vscode/
+*.code-workspace
+
+# ---------- 对外发布的稿件（本地保留，不入库）----------
+博文*.md
+博文*.txt
+docs/博主*
+
+# ---------- 开发期临时诊断工具 ----------
+docs/验证-WebGPU可用性.html
+# 早期调研时放在 docs/ 下的着色器副本，运行用的是 shaders/ 里那份
+docs/mandelbrot_fractal.wgsl
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---------- Node ----------
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---------- 构建产物 ----------
+dist/
+build/
+out/
+*.zip
+*.7z
+
+# ---------- 运行时产物 ----------
+*.log
+logs/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite3
+*.tmp
+tmp/
+
+# ---------- 系统 ----------
+.DS_Store
+Thumbs.db
+desktop.ini
