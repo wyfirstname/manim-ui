@@ -9,6 +9,9 @@ manim 是 3Blue1Brown 用来做数学动画的引擎，它内部用 WGSL 写了�
 
 纯前端 + 一个零依赖的 Python 静态服务器。中英双语界面（右上角 中 / EN 切换，语言自动记忆）。
 
+> **想直接用？** 去 [**Releases**](https://github.com/wyfirstname/manim-ui/releases/latest) 下载
+> `manim-ui-portable.zip`（内置便携 Python），解压双击 `启动.bat` 即可，无需安装任何东西。
+
 |  |  |
 |---|---|
 | ![随机游走](docs/previews/random-walk.png) | ![三维球面](docs/previews/3d-sphere.png) |
@@ -86,7 +89,12 @@ manim 是 3Blue1Brown 用来做数学动画的引擎，它内部用 WGSL 写了�
 
 ### 方式 A：绿色版（免安装，推荐）
 
-如果拿到的是 `manim-ui-portable.zip`（约 15 MB，内含便携 Python）：
+直接去 [**Releases 页面**](https://github.com/wyfirstname/manim-ui/releases/latest)
+下载 `manim-ui-portable.zip`（约 15 MB，内含便携 Python）：
+
+<https://github.com/wyfirstname/manim-ui/releases/download/v1.0.0/manim-ui-portable.zip>
+
+拿到 zip 后：
 
 1. 解压到任意目录（路径里最好别带中文空格以外的怪字符）；
 2. 双击 **启动.bat**——它会优先使用包里自带的 `runtime\python\python.exe`，
@@ -778,9 +786,12 @@ cd manim-ui
 python server/serve.py            # or double-click 启动.bat on Windows
 ```
 
-Then open <http://127.0.0.1:7788/>. A pre-built portable zip (bundles its own
-Python — unzip, double-click 启动.bat, no install) can be produced with
-`python tools/make_zip.py --with-python`.
+Then open <http://127.0.0.1:7788/>.
+
+**Easiest path:** grab `manim-ui-portable.zip` from the
+[**Releases page**](https://github.com/wyfirstname/manim-ui/releases/latest) — it bundles its own
+portable Python, so it's unzip → double-click `启动.bat` → done (no install, no network needed).
+You can also build it yourself with `python tools/make_zip.py --with-python`.
 
 > **Do not open `web/index.html` directly.** WebGPU requires a secure context
 > (HTTPS or `http://localhost`). Under `file://` the browser hides `navigator.gpu` entirely,
