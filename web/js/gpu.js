@@ -34,6 +34,24 @@ import { PipelineState, BLEND, DEPTH_STENCIL_FORMAT } from './pipeline.js';
  *  这里留出余量只是让行为可预期（读到的是我们写的 0 填充，而非随机内存）。 */
 const RECORD_HEADROOM = 16 * 1024;
 
+/**
+ * BGRA -> RGBA 通道交换（画布首选格式多为 bgra8unorm）。
+ *
+ * 为什么需要：ImageData / Canvas2D / PNG 都按 RGBA 字节序解释数据，
+ * 而 bgra8unorm 纹理读回来的是 B,G,R,A。不换的结果是红蓝对调 ——
+ * 蓝色分形导出成红色，还不报错，很难从代码上发现。
+ *
+ * 直接写进 dst 的 offset 处（而不是另开一块再复制），导出少走一遍全帧。
+ */
+function bgraToRgba(src, dst, offset = 0) {
+    for (let i = 0; i < src.length; i += 4) {
+        dst[offset + i] = src[i + 2];
+        dst[offset + i + 1] = src[i + 1];
+        dst[offset + i + 2] = src[i];
+        dst[offset + i + 3] = src[i + 3];
+    }
+}
+
 export class Gpu {
     constructor() {
         this.device = null;
@@ -344,7 +362,7 @@ export class Gpu {
         }
     }
 
-    /** 提交一帧绘制。 */
+    /** 提交一帧绘制。用于分形这类单一 mobject 的场景。 */
     render(draws) {
         if (!this.frameBindGroup || !this.layers.length) return;
         const encoder = this.device.createCommandEncoder();
@@ -407,9 +425,16 @@ export class Gpu {
         const src = new Uint8Array(readback.getMappedRange());
         // 从带padding 的行距转换为紧凑像素
         const pixels = new Uint8ClampedArray(width * height * 4);
+        // 离屏纹理用的是画布首选格式，多数平台是 bgra8unorm：
+        // 读回字节是 B,G,R,A，而 ImageData 按 RGBA 解释，所以这里逐行换回来。
+        // 换行时不重新分配整块缓冲，直接写进目标行的偏移处。
+        const swapChannels = String(this.format).includes('bgra');
         for (let y = 0; y < height; y++) {
             const s = y * bytesPerRow;
-            pixels.set(src.subarray(s, s + width * 4), y * width * 4);
+            const row = src.subarray(s, s + width * 4);
+            const d = y * width * 4;
+            if (swapChannels) bgraToRgba(row, pixels, d);
+            else pixels.set(row, d);
         }
         readback.unmap();
         readback.destroy();
