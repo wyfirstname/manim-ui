@@ -62,3 +62,11 @@ desktop.ini
 
 # 本机运行截图（验证用，不入库）
 docs/run-shots/
+
+# 打包产物与解出的便携运行时
+manim-ui*.zip
+runtime/
+
+# 打包产物与解出的便携运行时
+manim-ui*.zip
+runtime/

@@ -84,7 +84,25 @@ manim 是 3Blue1Brown 用来做数学动画的引擎，它内部用 WGSL 写了�
 
 ## 安装与启动
 
-### 步骤 1：装 Python（只需一次）
+### 方式 A：绿色版（免安装，推荐）
+
+如果拿到的是 `manim-ui-portable.zip`（约 15 MB，内含便携 Python）：
+
+1. 解压到任意目录（路径里最好别带中文空格以外的怪字符）；
+2. 双击 **启动.bat**——它会优先使用包里自带的 `runtime\python\python.exe`，
+   **不需要安装 Python、不需要联网、没有任何安装步骤**；
+3. 浏览器自动打开 <http://127.0.0.1:7788/>。
+
+绿色包由仓库里的 `tools/make_zip.py` 生成：
+
+```sh
+python tools/make_zip.py --with-python   # 内置便携 Python
+python tools/make_zip.py                 # 纯源码包（使用者需自备 Python）
+```
+
+### 方式 B：从源码运行
+
+#### 步骤 1：装 Python（只需一次）
 
 确认机器上有没有 Python：
 
@@ -95,7 +113,7 @@ python --version
 没装的话去 <https://www.python.org/downloads/> 下载 3.8 以上版本，
 **安装时务必勾选 `Add Python to PATH`**（不勾的话启动脚本找不到它）。
 
-### 步骤 2：拿到代码
+#### 步骤 2：拿到代码
 
 ```sh
 git clone https://github.com/wyfirstname/manim-ui.git
@@ -104,7 +122,7 @@ cd manim-ui
 
 或者直接下载 ZIP 解压，效果一样。
 
-### 步骤 3：启动
+#### 步骤 3：启动
 
 **Windows**：双击 **`启动.bat`**。脚本会自己找 `python` 或 `py -3`，
 起服务并自动打开浏览器。看到命令行打印出
@@ -496,7 +514,8 @@ GIF 没有内置（编码器要额外依赖），把 WebM 转一道即可。
 
 ```
 manim-ui/
-├── 启动.bat              Windows 一键启动
+├── 启动.bat              Windows 一键启动（优先使用包内便携 Python）
+├── runtime/python/       绿色版的便携 Python（只有打包产物里有，仓库不含）
 ├── server/serve.py       零依赖本地服务器（标准库）
 ├── shaders/              上游 3b1b/manim 的 WGSL 着色器（零改写，23 个文件）
 │   ├── mandelbrot_fractal.wgsl    分形
@@ -529,6 +548,7 @@ manim-ui/
 │           ├── field.js       向量场流线
 │           ├── solid.js       三维几何
 │           └── random.js      随机过程
+├── tools/make_zip.py     绿色版打包脚本（--with-python 内置便携 Python）
 ├── docs/
 │   ├── 技术方案.md        环境实测与架构设计记录
 │   └── previews/          各模块的离线渲染预览图 + 整页界面截图
@@ -758,7 +778,9 @@ cd manim-ui
 python server/serve.py            # or double-click 启动.bat on Windows
 ```
 
-Then open <http://127.0.0.1:7788/>.
+Then open <http://127.0.0.1:7788/>. A pre-built portable zip (bundles its own
+Python — unzip, double-click 启动.bat, no install) can be produced with
+`python tools/make_zip.py --with-python`.
 
 > **Do not open `web/index.html` directly.** WebGPU requires a secure context
 > (HTTPS or `http://localhost`). Under `file://` the browser hides `navigator.gpu` entirely,
