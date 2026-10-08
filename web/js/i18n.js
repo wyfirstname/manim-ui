@@ -30,6 +30,7 @@ const DICT = {
         'module.random': '随机过程',
         'module.fourier': '傅里叶级数',
         'module.matrix': '线性变换',
+        'module.dist': '概率分布',
 
         'hint.canvas': '拖拽平移 · 滚轮缩放 · 双击复位',
 
@@ -41,6 +42,8 @@ const DICT = {
         'section.material': '材质',
         'section.matrix': '矩阵',
         'section.wave': '波形',
+        'section.dist': '分布参数',
+        'section.interval': '区间（阴影面积 = 概率）',
 
         'ctrl.steps': '迭代步数',
         'ctrl.re': '实部 c',
@@ -111,6 +114,17 @@ const DICT = {
         'ctrl.showOriginal': '显示原网格 / 单位正方形',
         'ctrl.showGrid': '显示变换后网格',
         'ctrl.showVectors': '显示基向量箭头',
+
+        'ctrl.mu': '均值 μ',
+        'ctrl.sigma': '标准差 σ',
+        'ctrl.trials': '试验次数 n',
+        'ctrl.lambda': '发生次数 λ',
+        'ctrl.rate': '速率 λ',
+        'ctrl.intervalA': '区间下限 a',
+        'ctrl.intervalB': '区间上限 b',
+        'ctrl.showApprox': '显示正态近似曲线',
+        'ctrl.showMean': '显示均值线',
+        'ctrl.showProbBar': '显示概率条',
 
         'btn.export': '导出 PNG',
         'btn.exporting': '导出中…',
@@ -234,6 +248,15 @@ const DICT = {
         'preset.scale2d.hint': 'det = sx·sy：正方形面积按这个倍数变；某轴取负数就会把平面翻面',
         'preset.singular.name': '奇异矩阵（det = 0）',
         'preset.singular.hint': '整个平面被拍扁成一条直线，信息丢了就找不回来 —— 这正是没有逆矩阵的含义',
+
+        'preset.normal.name': '正态分布',
+        'preset.normal.hint': '钟形曲线 N(μ, σ²)；默认阴影是 [−σ, σ]，那块面积恰好是 68.27%。拖 a、b 看阴影面积怎么变',
+        'preset.binomial.name': '二项分布',
+        'preset.binomial.hint': 'n 次试验成功 k 次的概率；绿线是正态近似，把 n 拖大看它怎么贴合，拖 p 看它怎么偏斜',
+        'preset.poisson.name': '泊松分布',
+        'preset.poisson.hint': '单位时间内稀有事件发生 k 次的概率；λ 既是均值也是方差，λ 一大就长成钟形',
+        'preset.exponential.name': '指数分布',
+        'preset.exponential.hint': '等待第一次事件的时间，密度从最高点单调衰减；默认阴影 [0, 1/λ] 是 1 − 1/e ≈ 63.2%',
     },
 
     en: {
@@ -252,6 +275,7 @@ const DICT = {
         'module.random': 'Stochastic Processes',
         'module.fourier': 'Fourier Series',
         'module.matrix': 'Linear Transformations',
+        'module.dist': 'Probability Distributions',
 
         'hint.canvas': 'Drag to pan · scroll to zoom · double-click to reset',
 
@@ -263,6 +287,8 @@ const DICT = {
         'section.material': 'Material',
         'section.matrix': 'Matrix',
         'section.wave': 'Waveform',
+        'section.dist': 'Distribution',
+        'section.interval': 'Interval (shaded area = probability)',
 
         'ctrl.steps': 'Iterations',
         'ctrl.re': 'Real part c',
@@ -333,6 +359,17 @@ const DICT = {
         'ctrl.showOriginal': 'Show original grid & unit square',
         'ctrl.showGrid': 'Show transformed grid',
         'ctrl.showVectors': 'Show basis vectors',
+
+        'ctrl.mu': 'Mean μ',
+        'ctrl.sigma': 'Std. deviation σ',
+        'ctrl.trials': 'Trials n',
+        'ctrl.lambda': 'Rate λ (events)',
+        'ctrl.rate': 'Rate λ',
+        'ctrl.intervalA': 'Interval lower bound a',
+        'ctrl.intervalB': 'Interval upper bound b',
+        'ctrl.showApprox': 'Show normal approximation',
+        'ctrl.showMean': 'Show mean line',
+        'ctrl.showProbBar': 'Show probability bar',
 
         'btn.export': 'Export PNG',
         'btn.exporting': 'Exporting…',
@@ -456,6 +493,15 @@ const DICT = {
         'preset.scale2d.hint': 'det = sx·sy: the unit square scales by exactly that factor; a negative axis flips the plane over',
         'preset.singular.name': 'Singular Matrix (det = 0)',
         'preset.singular.hint': 'The whole plane collapses onto a single line — information is lost for good, which is what "no inverse" means',
+
+        'preset.normal.name': 'Normal Distribution',
+        'preset.normal.hint': 'The bell curve N(μ, σ²); the default shading is [−σ, σ], whose area is exactly 68.27% — drag a and b to see it change',
+        'preset.binomial.name': 'Binomial Distribution',
+        'preset.binomial.hint': 'Probability of k successes in n trials; the green curve is the normal approximation — grow n to watch it fit, drag p to skew it',
+        'preset.poisson.name': 'Poisson Distribution',
+        'preset.poisson.hint': 'Probability of k rare events in a unit interval; λ is both the mean and the variance, and large λ turns it into a bell',
+        'preset.exponential.name': 'Exponential Distribution',
+        'preset.exponential.hint': 'Waiting time to the first event — the density decays from its peak; the default shading [0, 1/λ] is 1 − 1/e ≈ 63.2%',
     },
 };
 

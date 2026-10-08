@@ -16,6 +16,7 @@ import { solidModule } from './solid.js';
 import { randomModule } from './random.js';
 import { fourierModule } from './fourier.js';
 import { matrixModule } from './matrix.js';
+import { distModule } from './dist.js';
 
 /** 按侧栏显示顺序注册 */
 export const MODULES = [
@@ -26,6 +27,7 @@ export const MODULES = [
     randomModule,
     fourierModule,
     matrixModule,
+    distModule,
 ];
 
 export function getModule(id) {
