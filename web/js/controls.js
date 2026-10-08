@@ -117,6 +117,63 @@ export class Checkbox {
     get element() { return this.el; }
 }
 
+/** 文本输入：对应上游 Textbox，本项目用来填自定义函数表达式 */
+export class TextInput {
+    constructor({ label, value = '', placeholder = '', hint = '', onChange = () => {} }) {
+        this.value = value;
+        this.onChange = onChange;
+
+        const el = document.createElement('div');
+        el.className = 'ctrl ctrl-text';
+        el.innerHTML = `
+            <div class="ctrl-head"><span class="ctrl-label"></span></div>
+            <input type="text" class="ctrl-input" spellcheck="false" autocomplete="off" />
+            <div class="ctrl-hint"></div>
+            <div class="ctrl-error"></div>
+        `;
+        this.labelEl = el.querySelector('.ctrl-label');
+        this.labelEl.textContent = label;
+
+        const input = el.querySelector('input');
+        input.value = value;
+        input.placeholder = placeholder;
+        input.addEventListener('input', () => {
+            this.value = input.value;
+            this.onChange(this.value);
+        });
+        // 回车不提交任何东西（没有表单），但要让用户感觉"收下了"
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') e.preventDefault();
+        });
+
+        this.hintEl = el.querySelector('.ctrl-hint');
+        this.hintEl.textContent = hint;
+        this.hintEl.style.display = hint ? '' : 'none';
+
+        this.errorEl = el.querySelector('.ctrl-error');
+        this.input = input;
+        this.el = el;
+    }
+
+    /** 语言切换/面板重建时回填值（正在输入时不要打扰） */
+    setValue(v) {
+        const s = String(v ?? '');
+        this.value = s;
+        if (document.activeElement !== this.input) this.input.value = s;
+    }
+
+    /** 显示解析错误（null / '' 表示无错误） */
+    setError(msg) {
+        this.errorEl.textContent = msg || '';
+        this.errorEl.style.display = msg ? '' : 'none';
+        this.input.classList.toggle('invalid', !!msg);
+    }
+
+    setLabel(text) { this.labelEl.textContent = text; }
+
+    get element() { return this.el; }
+}
+
 /** 按钮：对应上游 Button */
 export class Button {
     constructor({ label, onClick = () => {} }) {
@@ -144,7 +201,7 @@ export class ColorSliders {
             <div class="ctrl-swatches"></div>
         `;
         const box = this.el.querySelector('.ctrl-swatches');
-        // 预置一组适合学生理解的颜色
+        // 预置一组取自 manim 经典配色的颜色
         const palette = [
             '#58C4DD', '#83C167', '#FFFF00', '#FC6255', '#403A34',
             '#0074D9', '#7FDBFF', '#39CCCC', '#3D9970', '#FF4136',

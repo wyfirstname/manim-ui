@@ -20,6 +20,7 @@
  */
 
 import { t } from '../i18n.js';
+import { compileExpr } from '../expr.js';
 import {
     VM_OBJECT_FIELDS, VM_STROKE_RECORD,
     VERTS_PER_STROKE_CURVE, VERTS_PER_FILL_CURVE,
@@ -98,6 +99,20 @@ export const PRESETS = [
             a: 1, b: 0, c: 0, n: 12, limit: 1.3, fillOpacity: 0.45,
             xSpan: 5, ySpan: 5, lineWidth: 3,
             centerX: 1.5, centerY: 1.5, keepAspect: true,
+        },
+    },
+    {
+        // 自定义函数：表达式由用户输入（见 ../expr.js），
+        // a / b / c 三个滑块仍然可用，表达式里直接写 a、b、c 即可
+        id: 'custom',
+        kind: 'custom',
+        nameKey: 'preset.custom.name',
+        hintKey: 'preset.custom.hint',
+        params: {
+            expr: 'a*sin(b*x+c)',
+            a: 1, b: 1, c: 0, n: 12, limit: 1.3, fillOpacity: 0.45,
+            xSpan: 12, ySpan: 6, lineWidth: 3,
+            centerX: 0, centerY: 0, keepAspect: false,
         },
     },
 ];
@@ -249,28 +264,54 @@ export class PlotModule {
         return [];
     }
 
-    /** 当前预设要画的函数（可能不止一条） */
+    /** 当前预设要画的函数（可能不止一条）。
+     *  统一签名 f(ctx)：ctx = { x, a, b, c }，采样时复用同一个对象。 */
     #functions() {
         const p = this.params;
         switch (this.preset.kind) {
             case 'trig':
                 return [
-                    { f: (x) => p.a * Math.sin(p.b * x + p.c), color: COLORS.curveA },
-                    { f: (x) => p.a * Math.cos(p.b * x + p.c), color: COLORS.curveB },
+                    { f: (v) => p.a * Math.sin(p.b * v.x + p.c), color: COLORS.curveA },
+                    { f: (v) => p.a * Math.cos(p.b * v.x + p.c), color: COLORS.curveB },
                 ];
             case 'poly':
-                return [{ f: (x) => p.a * x * x + p.b * x + p.c, color: COLORS.curveA }];
+                return [{ f: (v) => p.a * v.x * v.x + p.b * v.x + p.c, color: COLORS.curveA }];
             case 'riemann':
             case 'integral':
-                return [{ f: (x) => x * x, color: COLORS.curveA }];
+                return [{ f: (v) => v.x * v.x, color: COLORS.curveA }];
+            case 'custom': {
+                const fn = this.#compiledExpr();
+                return fn ? [{ f: fn, color: COLORS.curveA }] : [];
+            }
             default:
                 return [];
         }
     }
 
     /**
+     * 编译自定义表达式（带缓存：只有串变了才重新解析）。
+     * 解析失败时把错误写进 paramsError.expr，输入框下方会把错误显示出来，
+     * 同时这一次不画任何曲线 —— 而不是画一条错位的线。
+     */
+    #compiledExpr() {
+        const src = String(this.params.expr ?? '');
+        if (this._exprSrc === src) return this._exprFn;
+
+        const { fn, error } = compileExpr(src);
+        this._exprSrc = src;
+        this._exprFn = fn;
+        this.paramsError = { ...(this.paramsError ?? {}) };
+        if (error) this.paramsError.expr = error;
+        else delete this.paramsError.expr;
+        return fn;
+    }
+
+    /**
      * 采样一条函数曲线。跳出视野、出现无穷/NaN、或相邻两点跳变过大时断开，
      * 形成多条子路径 —— 这就是 tan() 这类函数不画出竖直渐近线的办法。
+     *
+     * fn 接受 ctx = { x, a, b, c }：自定义表达式里可以直接引用 a/b/c 三个滑块。
+     * ctx 对象在循环外建好、每步只改 x，避免每点都分配一个对象。
      */
     #sampleCurve(fn, color, width) {
         const p = this.params;
@@ -281,10 +322,12 @@ export class PlotModule {
         const subs = [];
         let cur = [];
         let prevY = null;
+        const ctx = { x: 0, a: p.a, b: p.b, c: p.c };
 
         for (let i = 0; i <= N; i++) {
             const x = x0 + ((x1 - x0) * i) / N;
-            const y = fn(x);
+            ctx.x = x;
+            const y = fn(ctx);
             const bad = !Number.isFinite(y)
                 || Math.abs(y) > yLimit
                 || (prevY !== null && Math.abs(y - prevY) > p.ySpan);
@@ -381,7 +424,8 @@ export class PlotModule {
     /** 播放按钮的一步：正弦滚相位，黎曼和逐渐加细，定积分上限来回扫 */
     playStep() {
         const p = this.params;
-        if (this.preset.kind === 'trig') {
+        if (this.preset.kind === 'trig' || this.preset.kind === 'custom') {
+            // 自定义表达式里若引用了 c，播放时就是"波形平移"
             p.c += 0.03;
             if (p.c > Math.PI) p.c -= 2 * Math.PI;
         } else if (this.preset.kind === 'riemann') {
@@ -415,6 +459,13 @@ const notKind = (...kinds) => (p, inst) => !kinds.includes(inst?.preset?.kind);
 
 const PANEL = [
     { type: 'section', labelKey: 'section.basic' },
+    {
+        // 自定义函数：表达式输入框，实时解析。错误显示在输入框下方。
+        type: 'text', key: 'expr', labelKey: 'ctrl.expr',
+        placeholder: 'a*sin(b*x+c)',
+        hintKey: 'ctrl.exprHint',
+        visible: kindIs('custom'),
+    },
     {
         type: 'slider', key: 'a', labelKey: 'ctrl.coeffA',
         min: -3, max: 3, step: 0.01, format: (v) => v.toFixed(2),
