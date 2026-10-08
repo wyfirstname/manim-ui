@@ -37,6 +37,7 @@ manim 是 3Blue1Brown 用来做数学动画的引擎，它内部用 WGSL 写了�
 - [二次开发：加一个自己的模块](#二次开发加一个自己的模块)
 - [实现要点](#实现要点)
 - [踩坑记录](#踩坑记录)
+- [支持作者](#支持作者-)
 - [许可](#许可)
 - [English Quick Start](#english-quick-start)
 
@@ -467,7 +468,8 @@ manim-ui/
 │           └── random.js      随机过程
 ├── docs/
 │   ├── 技术方案.md        环境实测与架构设计记录
-│   └── previews/          各模块的离线渲染预览图
+│   └── previews/          各模块的离线渲染预览图 + 整页界面截图
+├── assets/                赞赏码 / 公众号二维码（README 用）
 └── LICENSE
 ```
 
@@ -622,6 +624,28 @@ WebGPU 画布用 `toDataURL()` 常得到空白，用 `copyTextureToBuffer` + `ma
 - **CPU 离线渲染预览图**：用模块真实的几何数据在 CPU 上光栅化成 SVG，
   再用无头 Edge 截成 PNG。`docs/previews/` 里的图就是这么来的，
   所以它们反映的是**真实几何**，不是手绘示意图。
+
+## 支持作者 💗
+
+如果这个项目对你有帮助，欢迎请作者喝杯咖啡 ☕
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="assets/juanzeng.png" alt="微信赞赏码" width="230"><br>
+        <sub><b>微信赞赏</b> · 金额随意，您的支持是持续更新的动力</sub>
+      </td>
+      <td align="center">
+        <img src="assets/gongzhonghao.jpg" alt="公众号二维码" width="200"><br>
+        <sub><b>公众号</b> · 扫码关注，获取项目更新与教程</sub>
+      </td>
+    </tr>
+  </table>
+  <p><sub>也可以这样支持：给项目点个 <b>Star ⭐</b>、提 Issue / PR、把项目分享给需要的朋友。</sub></p>
+</div>
+
+---
 
 ## 许可
 
