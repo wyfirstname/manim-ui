@@ -59,3 +59,6 @@ tmp/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# 本机运行截图（验证用，不入库）
+docs/run-shots/

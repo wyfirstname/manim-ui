@@ -32,6 +32,7 @@ manim 是 3Blue1Brown 用来做数学动画的引擎，它内部用 WGSL 写了�
   - [4. 三维几何](#4-三维几何)
   - [5. 随机过程](#5-随机过程)
 - [导出 PNG](#导出-png)
+- [录制视频](#录制视频webm)
 - [常见问题](#常见问题)
 - [目录结构](#目录结构)
 - [二次开发：加一个自己的模块](#二次开发加一个自己的模块)
@@ -68,7 +69,7 @@ manim 是 3Blue1Brown 用来做数学动画的引擎，它内部用 WGSL 写了�
 | **随机过程** | 3 | 大数定律、中心极限定理、随机游走，全部种子化、可复现 |
 
 通用能力：中英双语、参数实时调节、拖拽平移 / 滚轮缩放 / 双击复位、
-一键导出 PNG（离屏读回，不是截屏）、逐帧播放动画。
+一键导出 PNG（离屏读回，不是截屏）、逐帧播放动画、**一键录制 WebM 视频**。
 
 ## 环境要求
 
@@ -145,11 +146,12 @@ python server/serve.py --no-browser    # 不自动开浏览器
   左上角标题旁的 **中 / EN** 切换整个界面语言，选择会记在 localStorage 里。
 - **中栏**：渲染画布。画布左下角会常驻显示当前模块的鼠标操作提示。
 - **右栏**：参数面板。面板内容是**跟着模块和预设变的**——选"黎曼和"才会出现"矩形数"滑块，
-  选"正弦与余弦"就不会显示"填充不透明度"。下面三个按钮：
+  选"正弦与余弦"就不会显示"填充不透明度"。下面四个按钮：
   - **导出 PNG**：见 [导出 PNG](#导出-png)
   - **重置视图**：把参数恢复成当前预设的初始值（缩放、平移、滑块全部复位）
   - **▶ 播放**：进入动画模式，按钮变成"⏸ 暂停"。每 16 ms 推进一帧，各模块播放的含义不同（见下文）。
     模块没有实现播放时按钮是灰的。
+  - **● 录制动画**：把动画录成 WebM 视频，见 [录制视频](#录制视频webm)
 
 ### 通用鼠标操作
 
@@ -402,6 +404,42 @@ n 增长时看到的是**同一个分布在变形**，而不是换了批数据�
 为什么不直接抓 canvas：WebGPU 画布用 `toDataURL()` 常常得到一张空白图。
 本项目走的是 `copyTextureToBuffer` + `mapAsync` 真正读回像素，所以导出结果清晰可靠。
 
+## 录制视频（WebM）
+
+**● 录制动画**按钮把画布上的动画录成视频，再点一次变成 **■ 停止并保存**，
+文件按 `预设名-日期时间.webm` 命名（例如 `mandelbrot-20261008-141530.webm`）。
+
+用法就三步：
+
+1. （建议）先点 **重置视图**，把动画拨回起点，这样录到的是完整的一段；
+2. 点 **● 录制动画**——动画会自动开始播放（按钮变红并显示已录秒数）；
+3. 想停的时候点 **■ 停止并保存**，浏览器弹下载。
+
+各模块录到的内容，就是它"播放"时画面发生的事：
+
+| 模块 | 录下来的动画 |
+|---|---|
+| 分形实验室 | 曼德博集合持续放大，向着边界细节推进 |
+| 函数绘图器 | 三角函数平移 / 黎曼矩形由疏到密 / 面积随上限生长 |
+| 向量场流线 | 流线从种子位置"长"出来，长满后重新开始 |
+| 三维几何 | 物体绕竖直轴匀速旋转 |
+| 随机过程 | 曲线逐点绘出到收敛带内 / 直方图逐步逼近正态 / 游走路径一节节长出来 |
+
+几个要知道的点：
+
+- **录制是实时的**：录 10 秒就要播 10 秒，不能快进。帧率跟着渲染节奏走（上限 30 fps），
+  机器卡则帧率低但时长不变。
+- **录制期间建议别动滑块**——参数一变画面会跳，录进去就是跳的。
+- **有 120 秒上限**：忘了点停止的话到点会自动保存，不会一直录下去。
+- 录制中**切换模块**会先自动停止并保存当前这段。
+- 用的是浏览器自带的 VP9/VP8 编码器（`canvas.captureStream()` + `MediaRecorder`），
+  **没有任何第三方库**。产出的 WebM 可以用 Edge/Chrome 直接播放，
+  也能拖进剪映、Premiere 等剪辑软件。
+- 浏览器会把 MediaRecorder 的产物写成"未知时长"，本项目在保存前**补写了时长元数据**，
+  所以文件在播放器里能正常显示总时长、进度条能拖。
+- 想要 GIF：录一段 WebM，再用任意在线/本地工具转 GIF 即可——本项目不内置 GIF 编码器
+  （那需要额外依赖，和"零依赖、纯本地"的约束冲突）。
+
 ## 常见问题
 
 **Q：页面说"这台机器不支持 WebGPU"，是我的显卡不行吗？**
@@ -429,7 +467,8 @@ WebGL2 没有模板缓冲之外的关键能力，而且上游 manim 的着色器
 理论上有 WebGPU 的移动浏览器可以，但本项目没有做触摸手势适配，体验不好。
 
 **Q：能导出视频 / GIF 吗？**
-目前的导出是单帧 PNG。视频导出在计划中。
+视频可以，见 [录制视频](#录制视频webm)——右栏"● 录制动画"，录完是一个 WebM 文件。
+GIF 没有内置（编码器要额外依赖），把 WebM 转一道即可。
 
 ## 目录结构
 
@@ -458,6 +497,7 @@ manim-ui/
 │       ├── uniform-block.js   uniform 布局计算（严格复现 WGSL 对齐规则）
 │       ├── camera.js          相机（轨道旋转 + 透视）
 │       ├── controls.js        交互控件
+│       ├── recorder.js        动画录制（captureStream + MediaRecorder → WebM）
 │       ├── axes.js            坐标映射 / 坐标轴 / 平移缩放（绘图器与向量场共用）
 │       └── modules/
 │           ├── registry.js    模块注册表（新增模块只改这里）
@@ -612,10 +652,21 @@ WebGPU 画布用 `toDataURL()` 常得到空白，用 `copyTextureToBuffer` + `ma
 预览图上轮廓凹陷暴露的）。正解是**程序化生成**：三条边都是最短边的三角形恰好 20 个，
 再统一绕向朝外。
 
+**9. bgra8unorm 画布读回的像素要换 R/B 通道**
+`copyTextureToBuffer` 拿到的是纹理的原始字节序，而多数平台的画布首选格式是
+`bgra8unorm`；`ImageData` 按 RGBA 解释，于是蓝色分形导出成红色 —— 不报错、不崩溃，
+只是颜色不对，很难从代码上察觉。按 `format` 判断，是 bgra 系就逐行交换。
+
+**10. MediaRecorder 产出的 WebM 没有时长**
+Chromium 系**从不写 Duration 元素**，且把 Segment 长度写成"未知"。
+文件在浏览器里能播，拖进剪辑软件却显示时长未知、进度条拖不动，看起来像坏文件。
+好在 Segment 是未知长度，意味着**没有任何父级需要回填长度**：在 Info 元素内部插一个
+11 字节的 Duration、把 Info 自己的长度字节 +11 即可（见 `recorder.js`）。
+
 ### 怎么在没有无头 WebGPU 的机器上验证
 
 开发机的无头模式起不来 WebGPU（`--enable-unsafe-webgpu` 也卡在 `requestAdapter`），
-所以验证分两路：
+所以验证分三路：
 
 - **Node 离线测试**：用假的 WebGPU 设备装配管线，把 `queue.writeBuffer` 的 data 存下来，
   逐条解析出真实几何，再用 CPU 独立复算一遍做比对。覆盖模块描述符、记录层不变量、
@@ -624,6 +675,10 @@ WebGPU 画布用 `toDataURL()` 常得到空白，用 `copyTextureToBuffer` + `ma
 - **CPU 离线渲染预览图**：用模块真实的几何数据在 CPU 上光栅化成 SVG，
   再用无头 Edge 截成 PNG。`docs/previews/` 里的图就是这么来的，
   所以它们反映的是**真实几何**，不是手绘示意图。
+- **真实浏览器端到端**：无头不行、有头可以 —— 用 Playwright 驱动一个**非 headless** 的
+  Edge，WebGPU 就能正常拿到设备。截图、点按钮、读回像素、录制视频都在这个环境里验过，
+  比如导出 PNG 的通道顺序（与画布逐像素比对）和录制产出的视频时长（`video.duration`
+  能直接读出来，而不是 null）。
 
 ## 支持作者 💗
 
@@ -691,5 +746,7 @@ Then open <http://127.0.0.1:7788/>.
 
 The UI is bilingual (switch with 中 / EN in the top-left). Drag to pan, scroll to zoom,
 double-click to reset — in the 3D module, dragging orbits the object instead.
-Every module has **Export PNG** (offscreen pixel read-back, not a canvas screenshot) and a
-**Play** button that animates the parameters.
+Every module has **Export PNG** (offscreen pixel read-back, not a canvas screenshot), a
+**Play** button that animates the parameters, and **Record video**, which captures that
+animation to a WebM file (browser-native VP9 via `captureStream` + `MediaRecorder` —
+no third-party libraries, and the duration metadata is patched in on save).

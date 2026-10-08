@@ -315,6 +315,17 @@ html, body {
 .ctrl-btn:hover:not(:disabled) { background: #333338; border-color: #565659; }
 .ctrl-btn:disabled { opacity: 0.5; cursor: default; }
 
+/* 录制中：红色描边，一眼看出还在录 */
+.ctrl-btn.recording {
+    color: #ff7b72;
+    border-color: rgba(255, 123, 114, 0.6);
+    background: rgba(255, 123, 114, 0.08);
+}
+.ctrl-btn.recording:hover:not(:disabled) {
+    background: rgba(255, 123, 114, 0.16);
+    border-color: #ff7b72;
+}
+
 .panel-actions {
     display: flex;
     flex-direction: column;

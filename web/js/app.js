@@ -16,9 +16,23 @@ import { Gpu } from './gpu.js';
 import { MODULES, getModule } from './modules/registry.js';
 import { buildPanel } from './panel.js';
 import { Button, CanvasController } from './controls.js';
+import { CanvasRecorder, downloadBlob } from './recorder.js';
 import { t, getLang, setLang, onLangChange, applyStaticI18n, LANGS } from './i18n.js';
 
 const $ = (sel) => document.querySelector(sel);
+
+/** 录制帧率上限（浏览器按实际重绘节奏走，这只是个上限） */
+const RECORD_FPS = 30;
+/** 录制上限：忘了点停止也不至于把内存录爆，到点自动保存 */
+const RECORD_MAX_SECONDS = 120;
+
+/** 文件名用的时间戳，形如 20261008-141530 */
+function timeStamp() {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`
+        + `-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
 
 class App {
     constructor() {
@@ -33,6 +47,7 @@ class App {
 
         this.running = false;
         this.playing = false;
+        this.recorder = null;
         this.panelReady = false;
         this.needsRender = true;
         this.log = [];
@@ -189,6 +204,8 @@ class App {
     /** 切换模块：取（或新建）实例，载入默认预设后重建 UI */
     async #switchModule(id) {
         if (id === this.activeId) return;
+        // 录制中切模块：先把这一段存下来，免得视频录到一半换了内容
+        if (this.recorder?.recording) await this.#finishRecord();
         const desc = getModule(id);
         let inst = this.instances.get(id);
         if (!inst) {
@@ -286,20 +303,35 @@ class App {
         // 播放：模块未实现 playStep() 时不可用
         const playable = typeof this.module.playStep === 'function';
         const play = new Button({
-            label: this.playing ? t('btn.pause') : t('btn.play'),
+            label: t('btn.play'),
             onClick: () => {
-                if (!playable) return;
-                this.playing = !this.playing;
-                play.setLabel(this.playing ? t('btn.pause') : t('btn.play'));
-                if (this.playing) this.#playLoop();
+                if (playable) this.#setPlaying(!this.playing);
             },
         });
         play.el.disabled = !playable;
         this.playBtn = play;
         actions.appendChild(play.element);
 
+        // 录制动画：只有能播放的模块才录得出视频
+        const recordable = playable && CanvasRecorder.supported();
+        const record = new Button({
+            label: t('btn.record'),
+            onClick: () => this.#toggleRecord(),
+        });
+        record.el.disabled = !recordable;
+        if (!CanvasRecorder.supported()) {
+            record.el.title = t('record.unsupported');
+        } else if (!playable) {
+            record.el.title = t('record.noplay');
+        }
+        this.recordBtn = record;
+        actions.appendChild(record.element);
+
         panel.appendChild(actions);
         this.panel.sync();
+        // 面板可能因切语言被重建，把播放/录制的真实状态贴回去
+        this.#syncPlayButton();
+        this.#syncRecordButton();
     }
 
     #setupCanvasInteraction() {
@@ -323,6 +355,99 @@ class App {
             this._playTimer = setTimeout(tick, 16);
         };
         this._playTimer = setTimeout(tick, 16);
+    }
+
+    /** 播放开关的唯一入口：按钮文字、循环、录制联动都从这里走 */
+    #setPlaying(v) {
+        this.playing = !!v;
+        this.#syncPlayButton();
+        if (this.playing) this.#playLoop();
+    }
+
+    #syncPlayButton() {
+        this.playBtn?.setLabel(this.playing ? t('btn.pause') : t('btn.play'));
+    }
+
+    // ── 动画录制 ─────────────────────────────────
+
+    /**
+     * 「录制动画」按钮：按一下开始、再按一下停止并保存。
+     * 录制期间自动开播 —— 画面不动就没什么可录的。
+     */
+    async #toggleRecord() {
+        if (this.recorder?.recording) {
+            await this.#finishRecord();
+            return;
+        }
+        if (!CanvasRecorder.supported()) {
+            this.logStep(t('log.recordUnsupported'));
+            return;
+        }
+        if (typeof this.module.playStep !== 'function') {
+            this.logStep(t('log.recordNoPlay'));
+            return;
+        }
+
+        this.recorder = this.recorder ?? new CanvasRecorder($('#view'));
+        try {
+            this.recorder.start({ fps: RECORD_FPS });
+        } catch (e) {
+            this.logStep(t('log.recordFail', { msg: e.message }));
+            return;
+        }
+        this.#setPlaying(true);
+        this.#startRecordTimer();
+        this.#syncRecordButton();
+        this.logStep(t('log.recording', { fps: RECORD_FPS }));
+    }
+
+    /** 停止录制 → 下载文件。切模块、到达上限也会走这里。 */
+    async #finishRecord() {
+        if (!this.recorder?.recording) return;
+        this.#stopRecordTimer();
+        let result = null;
+        try {
+            result = await this.recorder.stop();
+        } catch (e) {
+            this.logStep(t('log.recordFail', { msg: e.message }));
+        }
+        this.#setPlaying(false);
+        this.#syncRecordButton();
+
+        if (!result || !result.blob.size) {
+            this.logStep(t('log.recordEmpty'));
+            return;
+        }
+        const name = `${this.module.preset.id}-${timeStamp()}.webm`;
+        downloadBlob(result.blob, name);
+        this.logStep(t('log.recorded', { name, s: result.duration.toFixed(1) }));
+    }
+
+    #startRecordTimer() {
+        this.#stopRecordTimer();
+        this._recTimer = setInterval(() => {
+            if (!this.recorder?.recording) { this.#stopRecordTimer(); return; }
+            this.#syncRecordButton();
+            if (this.recorder.elapsed >= RECORD_MAX_SECONDS) {
+                this.logStep(t('log.recordLimit', { s: RECORD_MAX_SECONDS }));
+                this.#finishRecord();
+            }
+        }, 200);
+    }
+
+    #stopRecordTimer() {
+        if (this._recTimer) clearInterval(this._recTimer);
+        this._recTimer = null;
+    }
+
+    #syncRecordButton() {
+        const btn = this.recordBtn;
+        if (!btn) return;
+        const on = !!this.recorder?.recording;
+        btn.setLabel(on
+            ? t('btn.recording', { s: this.recorder.elapsed.toFixed(1) })
+            : t('btn.record'));
+        btn.el.classList.toggle('recording', on);
     }
 
     #loop() {
