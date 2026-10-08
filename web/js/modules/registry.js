@@ -14,6 +14,8 @@ import { plotModule } from './plot.js';
 import { fieldModule } from './field.js';
 import { solidModule } from './solid.js';
 import { randomModule } from './random.js';
+import { fourierModule } from './fourier.js';
+import { matrixModule } from './matrix.js';
 
 /** 按侧栏显示顺序注册 */
 export const MODULES = [
@@ -22,6 +24,8 @@ export const MODULES = [
     fieldModule,
     solidModule,
     randomModule,
+    fourierModule,
+    matrixModule,
 ];
 
 export function getModule(id) {

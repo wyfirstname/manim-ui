@@ -17,6 +17,7 @@ import { MODULES, getModule } from './modules/registry.js';
 import { buildPanel } from './panel.js';
 import { Button, CanvasController } from './controls.js';
 import { CanvasRecorder, downloadBlob } from './recorder.js';
+import { encodeGif } from './gif.js';
 import { t, getLang, setLang, onLangChange, applyStaticI18n, LANGS } from './i18n.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -25,6 +26,17 @@ const $ = (sel) => document.querySelector(sel);
 const RECORD_FPS = 30;
 /** 录制上限：忘了点停止也不至于把内存录爆，到点自动保存 */
 const RECORD_MAX_SECONDS = 120;
+
+/** GIF 导出：帧数、每帧时长（1/100 秒）、像素宽上限 */
+const GIF_FRAMES = 60;
+const GIF_DELAY_CS = 7;
+const GIF_MAX_WIDTH = 600;
+
+/** 人类可读的文件大小（日志里显示用） */
+function fmtSize(bytes) {
+    if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
 
 /** 文件名用的时间戳，形如 20261008-141530 */
 function timeStamp() {
@@ -327,6 +339,16 @@ class App {
         this.recordBtn = record;
         actions.appendChild(record.element);
 
+        // 导出 GIF：离屏逐帧渲染，与实时的录制是两条完全不同的路
+        const gif = new Button({
+            label: t('btn.gif'),
+            onClick: () => this.#exportGif(),
+        });
+        gif.el.disabled = !playable;
+        if (!playable) gif.el.title = t('record.noplay');
+        this.gifBtn = gif;
+        actions.appendChild(gif.element);
+
         panel.appendChild(actions);
         this.panel.sync();
         // 面板可能因切语言被重建，把播放/录制的真实状态贴回去
@@ -448,6 +470,105 @@ class App {
             ? t('btn.recording', { s: this.recorder.elapsed.toFixed(1) })
             : t('btn.record'));
         btn.el.classList.toggle('recording', on);
+    }
+
+    // ── GIF 导出 ─────────────────────────────────
+
+    /**
+     * 把模块实例的当前状态整体快照下来。
+     *
+     * 为什么需要：GIF 导出靠反复调 playStep() 推进动画（否则 60 帧长得一模一样），
+     * 这会真的改掉模块的参数与动画状态。导出完得原样还回去，不然用户会发现
+     * 「导出一次，画面自己变了」。
+     *
+     * gpu / entries / passes 是渲染管线对象（含 GPU 句柄），不参与快照；
+     * 函数属性同理跳过。其余一律深拷贝（预设是纯数据，params 是纯数据）。
+     */
+    #snapshotModule() {
+        const inst = this.module;
+        const snap = {};
+        for (const [k, v] of Object.entries(inst)) {
+            if (k === 'gpu' || k === 'entries' || k === 'passes') continue;
+            if (typeof v === 'function') continue;
+            try {
+                snap[k] = (v && typeof v === 'object') ? structuredClone(v) : v;
+            } catch {
+                /* 含不可克隆的东西就跳过这一项，不影响导出本身 */
+            }
+        }
+        return snap;
+    }
+
+    #restoreModule(snap) {
+        Object.assign(this.module, snap);
+        this.module.update?.();
+        this.panel?.sync();
+        this.needsRender = true;
+    }
+
+    /**
+     * 导出 GIF —— 与「录制动画」是两条完全不同的路：
+     *   录制  实时抓画布（captureStream），录多久就得播多久
+     *   GIF   **逐帧离屏渲染**：调一次 playStep() 渲染一帧读回像素，
+     *         60 帧就是调 60 次，与播放时长无关，帧率恒定
+     */
+    async #exportGif() {
+        if (this._gifBusy) return;
+        if (typeof this.module.playStep !== 'function') {
+            this.logStep(t('log.recordNoPlay'));
+            return;
+        }
+        this._gifBusy = true;
+
+        const btn = this.gifBtn;
+        const wasPlaying = this.playing;
+        this.#setPlaying(false);
+        if (btn) btn.el.disabled = true;
+
+        const snap = this.#snapshotModule();
+        // 与外层画布同宽高比：GIF 只是等比缩小，构图与屏幕上看到的一致
+        const scale = Math.min(1, GIF_MAX_WIDTH / this.gpu.width);
+        const w = Math.max(2, Math.round(this.gpu.width * scale));
+        const h = Math.max(2, Math.round(this.gpu.height * scale));
+
+        // 相机也要按离屏分辨率走一遍：着色器的抗锯齿宽度是按「一个像素对应多少
+        // 场景单位」算的，沿用屏幕分辨率会让缩小后的边缘糊掉或起毛。
+        const cam = this.gpu.camera;
+        const savedPixels = [cam.pixelWidth, cam.pixelHeight];
+        cam.resize(w, h);
+
+        const t0 = performance.now();
+        this.logStep(t('log.gifStart', { n: GIF_FRAMES }));
+        try {
+            const frames = [];
+            for (let i = 0; i < GIF_FRAMES; i++) {
+                this.module.playStep();
+                this.gpu.updateFrameUniform();
+                const { pixels } = await this.gpu.renderToPixels(this.module.draws, w, h);
+                frames.push(pixels);
+                btn?.setLabel(t('btn.gifWorking', { pct: Math.round(((i + 1) / GIF_FRAMES) * 100) }));
+            }
+
+            const blob = encodeGif(frames, w, h, { delayCs: GIF_DELAY_CS });
+            const secs = ((performance.now() - t0) / 1000).toFixed(1);
+            const name = `${this.module.preset.id}.gif`;
+            downloadBlob(blob, name);
+            this.logStep(t('log.gifDone', {
+                name, n: GIF_FRAMES, size: fmtSize(blob.size), s: secs,
+            }));
+        } catch (e) {
+            console.error(e);
+            this.logStep(t('log.gifFail', { msg: e.message }));
+        } finally {
+            cam.resize(savedPixels[0], savedPixels[1]);
+            this.#restoreModule(snap);
+            if (btn) {
+                btn.setLabel(t('btn.gif'));
+                btn.el.disabled = false;
+            }
+            this._gifBusy = false;
+            if (wasPlaying) this.#setPlaying(true);
+        }
     }
 
     #loop() {

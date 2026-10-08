@@ -18,6 +18,8 @@ manim 是 3Blue1Brown 用来做数学动画的引擎，它内部用 WGSL 写了�
 | 随机游走 —— 灰圈是 √n 标度 | 三维球面 —— 上游 surface.wgsl 现推网格 |
 | ![双涡](docs/previews/dualvortex.png) | ![中心极限定理](docs/previews/random-clt.png) |
 | 双涡向量场 —— 颜色编码速率 | 中心极限定理 —— 直方图长成钟形 |
+| ![傅里叶方波](docs/previews/fourier-square.png) | ![线性变换](docs/previews/matrix-rotate.png) |
+| 傅里叶级数 —— N=5 逼近方波，跳变处是吉布斯尖 | 线性变换 —— 旋转 30°，色块面积 = \|det\| |
 
 ---
 
@@ -34,8 +36,11 @@ manim 是 3Blue1Brown 用来做数学动画的引擎，它内部用 WGSL 写了�
   - [3. 向量场流线](#3-向量场流线)
   - [4. 三维几何](#4-三维几何)
   - [5. 随机过程](#5-随机过程)
+  - [6. 傅里叶级数](#6-傅里叶级数)
+  - [7. 线性变换](#7-线性变换)
 - [导出 PNG](#导出-png)
 - [录制视频](#录制视频webm)
+- [导出 GIF](#导出-gif)
 - [常见问题](#常见问题)
 - [目录结构](#目录结构)
 - [二次开发：加一个自己的模块](#二次开发加一个自己的模块)
@@ -61,7 +66,7 @@ manim 是 3Blue1Brown 用来做数学动画的引擎，它内部用 WGSL 写了�
 
 ## 功能一览
 
-侧栏共 **5 个模块**、**22 个预设场景**：
+侧栏共 **7 个模块**、**29 个预设场景**：
 
 | 模块 | 预设数 | 能做什么 |
 |---|---|---|
@@ -70,9 +75,12 @@ manim 是 3Blue1Brown 用来做数学动画的引擎，它内部用 WGSL 写了�
 | **向量场流线** | 4 | 涡旋 / 吸引子 / 偶极子 / 双涡的箭头场 + RK4 流线，颜色编码速率 |
 | **三维几何** | 4 | 球面 / 环面 / 莫比乌斯带 / 正二十面体，鼠标轨道旋转 + 透视投影 |
 | **随机过程** | 3 | 大数定律、中心极限定理、随机游走，全部种子化、可复现 |
+| **傅里叶级数** | 3 | 方波 / 锯齿波 / 三角波的正弦级数逼近，看谐波一项项"长"成目标波形（含吉布斯现象） |
+| **线性变换** | 4 | 旋转 / 剪切 / 缩放 / 奇异矩阵：网格跟着矩阵搬，色块面积 = \|det\|，行列式为负自动"翻面"换色 |
 
 通用能力：中英双语、参数实时调节、拖拽平移 / 滚轮缩放 / 双击复位、
-一键导出 PNG（离屏读回，不是截屏）、逐帧播放动画、**一键录制 WebM 视频**。
+一键导出 PNG（离屏读回，不是截屏）、逐帧播放动画、**一键录制 WebM 视频**、
+**一键导出 GIF 动图**（内置零依赖 GIF89a 编码器）。
 
 ## 环境要求
 
@@ -178,6 +186,7 @@ python server/serve.py --no-browser    # 不自动开浏览器
   - **▶ 播放**：进入动画模式，按钮变成"⏸ 暂停"。每 16 ms 推进一帧，各模块播放的含义不同（见下文）。
     模块没有实现播放时按钮是灰的。
   - **● 录制动画**：把动画录成 WebM 视频，见 [录制视频](#录制视频webm)
+  - **导出 GIF**：把一整段动画循环编码成 GIF 动图，见 [导出 GIF](#导出-gif)
 
 ### 通用鼠标操作
 
@@ -444,6 +453,85 @@ n 增长时看到的是**同一个分布在变形**，而不是换了批数据�
 
 ---
 
+### 6. 傅里叶级数
+
+把方波、锯齿波、三角波这类"有棱角"的周期函数写成**无穷多项正弦波之和**，
+然后用有限的 N 项去逼近它——看波形怎么一层层"长"成目标。
+
+#### 三条级数
+
+| 预设 | 级数 | 收敛速度 |
+|---|---|---|
+| **方波** | 4/π · Σ_{k 奇} sin(kx)/k | 系数按 1/k 衰减——**收敛慢**，跳变处永远留一条过冲小尖（吉布斯现象），N 再大也压不平，只能压窄 |
+| **锯齿波** | 2/π · Σ (−1)^{k+1} sin(kx)/k | 同样 1/k 衰减，同样有吉布斯尖 |
+| **三角波** | 8/π² · Σ_{k 奇} (−1)^{(k−1)/2} sin(kx)/k² | 系数按 1/k² 衰减——**收敛快得多**，N=2 时已经很像，且没有过冲（函数本身连续） |
+
+三条放在一起正好说明一件事：级数收敛的快慢不取决于"波多复杂"，
+而取决于**函数本身光不光滑**——有跳变就只能 1/k，折线就能 1/k²。
+
+#### 参数
+
+| 滑块 | 范围 | 作用 |
+|---|---|---|
+| **谐波项数** | 1 – 40 | 部分和取前 N 项。拖动它就是整章故事：从 1 条正弦到几十条正弦叠出方波 |
+| **振幅** | 0.2 – 2 | 目标波形与部分和一起缩放 |
+| **显示目标波形** | 勾选 | 灰色的那条"要逼近的函数"。跳变处会自动断开，不画数学上不存在的竖直连线 |
+| **显示谐波分解** | 勾选 | 把前 8 项各画一条半透明彩线——一眼看出"这份是哪些正弦拼出来的" |
+| **横向 / 纵向范围 / 等比例 / 线宽** | 同绘图器 | 视野与线宽 |
+
+#### 交互与播放
+
+- 拖拽平移、滚轮以光标为锚点缩放、双击复位（与绘图器同一套语义，共用 `axes.js`）。
+- **播放**：谐波项数每帧 +1/3（约每 3 帧加一项），从 1 加到 40 再回绕——
+  **看着波形一项一项长成目标**，是理解级数收敛最直观的方式。
+
+---
+
+### 7. 线性变换
+
+一个 2×2 矩阵到底对平面做了什么？把**网格和单位正方形一起按矩阵搬一遍**，答案就摆在眼前。
+
+画面上有四种东西：
+
+- **原网格**（灰）：固定不动的参考系；
+- **变换后网格**：两种颜色的两族直线，矩阵作用之后的样子——线性变换把直线映成直线，
+  所以每条线只需把两个端点搬一遍；
+- **单位正方形**（半透明色块）：它的面积就是 \|det M\|；**行列式为负时换成另一种颜色**，
+  因为负行列式意味着平面被翻了个面（定向反转）；
+- **基向量箭头**：ê₁ 与 ê₂ 的像——就是矩阵的**两列**，"矩阵每一列都是基向量的落点"
+  最直接的证据。
+
+#### 预设
+
+| 预设 | 矩阵 | 说明 |
+|---|---|---|
+| **旋转** | [[cosθ, −sinθ], [sinθ, cosθ]] | det = 1，面积不变，平面被整体转 |
+| **剪切** | [[1, k], [0, 1]] | det = 1，面积不变但形状被"推歪"——"面积不变"远不等于"形状不变" |
+| **缩放** | [[sx, 0], [0, sy]] | det = sx·sy，最简单的情形 |
+| **奇异** | [[1, 0.5], [0.5, 0.25]]（可自由改） | det = 0，整个平面被拍扁到一条直线上——这正是"没有逆矩阵"的几何含义 |
+
+#### 参数
+
+| 滑块 | 范围 | 出现于 | 作用 |
+|---|---|---|---|
+| **旋转角** | −180° – 180° | 旋转 | 转多少度 |
+| **剪切量** | −2 – 2 | 剪切 | ê₂ 的横移量 |
+| **缩放 X / Y** | −2 – 2 | 缩放 | 两轴各缩放多少（拖成负数就能看到"翻面"换色） |
+| **矩阵 a / b / c / d** | −2 – 2 | 奇异 | 自由矩阵 [[a, b], [c, d]]（列优先：第一列 (a, c) 是 ê₁ 的像） |
+| **动画进度** | 0 – 1 | 全部 | M(t) = (1−t)·I + t·M：0 是单位阵，1 是目标矩阵 |
+| **显示原网格 / 显示变换后网格 / 显示基向量** | 勾选 | 全部 | 三层元素各有关开关，可以只留想看的 |
+| **横向 / 纵向范围 / 等比例 / 线宽** | 同绘图器 | 全部 | 视野与线宽 |
+
+#### 交互与播放
+
+- 拖拽平移、滚轮以光标为锚点缩放、双击复位（与绘图器同一套语义）。
+- **播放**：t 每帧 +0.012，从 0 走到 1 再停一拍重来——**看着矩阵从单位阵"长"到目标**，
+  正方形被逐步推倒、拉长、压扁。全程是连续的线性变换。
+  （注：t < 1 时的中间矩阵未必还是原预设那一类——旋转的插值是"缩着转"——
+  但这恰恰是几何直觉本身：矩阵就是连续搬动平面的那个东西。）
+
+---
+
 ## 导出 PNG
 
 右栏的**导出 PNG**按钮：离屏渲染一遍当前画面，把像素从 GPU 读回来，
@@ -485,8 +573,42 @@ n 增长时看到的是**同一个分布在变形**，而不是换了批数据�
   也能拖进剪映、Premiere 等剪辑软件。
 - 浏览器会把 MediaRecorder 的产物写成"未知时长"，本项目在保存前**补写了时长元数据**，
   所以文件在播放器里能正常显示总时长、进度条能拖。
-- 想要 GIF：录一段 WebM，再用任意在线/本地工具转 GIF 即可——本项目不内置 GIF 编码器
-  （那需要额外依赖，和"零依赖、纯本地"的约束冲突）。
+- 想要 GIF 动图：直接用右栏的 **导出 GIF** 按钮，见下一节。
+
+## 导出 GIF
+
+右栏的 **导出 GIF** 按钮把当前预设的**一整段动画**编码成 GIF89a 动图下载，
+文件名是 `预设名.gif`（比如 `mandelbrot.gif`）。
+
+它和"录制视频"是两条互补的路：
+
+|  | ● 录制动画（WebM） | 导出 GIF |
+|---|---|---|
+| 原理 | `captureStream` **实时**录制 | **离屏逐帧**渲染后编码，帧率恒定 |
+| 时长 | 你点了停止才算（上限 120 秒） | 固定一段完整动画循环（60 帧 × 0.07 秒 ≈ 4.2 秒） |
+| 颜色 | 真彩色 | ≤256 色（GIF 格式限制） |
+| 适合 | 完整演示、剪辑素材 | 文档、聊天、README 里自动循环的小图 |
+
+工作方式：
+
+1. 点按钮后程序**自动演一遍完整动画**：逐帧推进播放逻辑、离屏渲染、读回像素
+   （约 3 秒，期间不用管它）；
+2. 编码完成自动弹出下载，随后**模块状态原样还原**——导出前后你调过的参数、
+   拖过的视野一个都不变；
+3. 动画自动循环播放（NETSCAPE 扩展）。
+
+编码器是**从零写的**（`web/js/gif.js`，约 400 行，仍然零第三方依赖）：
+
+- **中位切分量化**：跨帧均匀采样 6 万个像素，反复沿最宽的颜色通道按中位数切盒子，
+  凑出 ≤256 色的调色板；
+- **Floyd–Steinberg 误差扩散抖动**：256 色逼近真彩色的经典手法，渐变区域不出现色带；
+- **LZW 压缩**：完整按 GIF 规范实现——码长从 9 位起步、每满 2^codeSize 加 1 位、
+  12 位封顶、字典满 4096 项就吐清除码重建，码流低位在前；
+- 有一个 32768 项的 5 位 RGB 查找表做"像素 → 调色板索引"，否则逐像素 256 次
+  距离比较在 60 帧上要算 8 亿次。
+
+限制：帧数上限 240、导出宽度上限 600 像素（按比例缩高）。GIF 本身只有 256 色，
+想无损画质请用 WebM 录制。
 
 ## 常见问题
 
@@ -515,8 +637,8 @@ WebGL2 没有模板缓冲之外的关键能力，而且上游 manim 的着色器
 理论上有 WebGPU 的移动浏览器可以，但本项目没有做触摸手势适配，体验不好。
 
 **Q：能导出视频 / GIF 吗？**
-视频可以，见 [录制视频](#录制视频webm)——右栏"● 录制动画"，录完是一个 WebM 文件。
-GIF 没有内置（编码器要额外依赖），把 WebM 转一道即可。
+都可以。视频见 [录制视频](#录制视频webm)——右栏"● 录制动画"，录完是一个 WebM 文件；
+GIF 见 [导出 GIF](#导出-gif)——右栏"导出 GIF"，一整段循环动画直接下载，无需任何转换工具。
 
 ## 目录结构
 
@@ -547,6 +669,7 @@ manim-ui/
 │       ├── camera.js          相机（轨道旋转 + 透视）
 │       ├── controls.js        交互控件
 │       ├── recorder.js        动画录制（captureStream + MediaRecorder → WebM）
+│       ├── gif.js             GIF89a 编码器（量化 + 抖动 + LZW，零依赖自写）
 │       ├── expr.js            数学表达式解析器（词法 + 递归下降，白名单制，无 eval）
 │       ├── axes.js            坐标映射 / 坐标轴 / 平移缩放（绘图器与向量场共用）
 │       └── modules/
@@ -555,7 +678,9 @@ manim-ui/
 │           ├── plot.js        函数绘图器
 │           ├── field.js       向量场流线
 │           ├── solid.js       三维几何
-│           └── random.js      随机过程
+│           ├── random.js      随机过程
+│           ├── fourier.js     傅里叶级数
+│           └── matrix.js      线性变换
 ├── tools/make_zip.py     绿色版打包脚本（--with-python 内置便携 Python）
 ├── docs/
 │   ├── 技术方案.md        环境实测与架构设计记录
@@ -636,6 +761,8 @@ export const myModule = {
 | 向量场流线 | 网格 / 坐标轴 | 箭头场 | 流线 |
 | 三维几何 | 坐标轴 | 曲面（深度测试 + 深写） | 网格线（不写深，压在曲面上） |
 | 随机过程 | 网格 / 典型距离圆 | 收敛带 / 直方图柱 | 均值曲线 / 正态曲线 / 游走路径 |
+| 傅里叶级数 | 网格 / 坐标轴 | 目标波形 + 谐波分解 + 部分和 | — |
+| 线性变换 | 原网格 / 坐标轴 | 单位正方形的像（填充三趟） | 变换后网格 + 基向量箭头 |
 
 三维那三层的 mobject uniform 用的是同一份**并集**布局（描边字段 + resolution），
 各自没用到的成员白放着——同一个模块里同时跑两种 mobject 类型就靠这个。
@@ -719,7 +846,7 @@ Chromium 系**从不写 Duration 元素**，且把 Segment 长度写成"未知"�
 `in` 会顺着原型链找到 `constructor`、`toString` 这些继承属性，于是用户输入
 `constructor` 就能拿到 Object 构造函数，白名单形同虚设。
 用 `Object.prototype.hasOwnProperty.call(table, name)` 查表后，这一类名字
-全部变成"不认识的名字"。安全测试里有一组专门的注入样本（`/tmp/chk/expr.test.mjs`）。
+全部变成"不认识的名字"。安全测试里有一组专门的注入样本覆盖这一类输入。
 
 ### 怎么在没有无头 WebGPU 的机器上验证
 
@@ -728,8 +855,13 @@ Chromium 系**从不写 Duration 元素**，且把 Segment 长度写成"未知"�
 
 - **Node 离线测试**：用假的 WebGPU 设备装配管线，把 `queue.writeBuffer` 的 data 存下来，
   逐条解析出真实几何，再用 CPU 独立复算一遍做比对。覆盖模块描述符、记录层不变量、
-  填充绕数的 CPU 模拟、中英词条对齐、着色器字段、三维几何不变量，以及随机过程的
-  统计正确性（曲线逐点等于独立复算的前缀均值、游走均方位移 ≈ n·s²、同种子前缀性质等）。
+  填充绕数的 CPU 模拟、中英词条对齐、着色器字段、三维几何不变量、随机过程的
+  统计正确性（曲线逐点等于独立复算的前缀均值、游走均方位移 ≈ n·s²、同种子前缀性质等）、
+  傅里叶级数的数学正确性（部分和逐点等于独立复算、吉布斯过冲峰值 ≈ 1.178980 理论值、
+  三角波从下方逼近不过冲）、线性变换的几何正确性（旋转保距正交、剪切 det=1、
+  奇异矩阵把全平面的像压成一条直线），以及 GIF 编码器——**自带一个独立的 LZW 解码器**
+  做往返验证：编码再解码逐字节比对，覆盖码长 9→12 位跨越、字典清空重建等全部分支，
+  容器结构逐字段断言（头部 / 色表 / 循环扩展 / 帧延时 / 结束符）。
 - **CPU 离线渲染预览图**：用模块真实的几何数据在 CPU 上光栅化成 SVG，
   再用无头 Edge 截成 PNG。`docs/previews/` 里的图就是这么来的，
   所以它们反映的是**真实几何**，不是手绘示意图。
@@ -802,14 +934,19 @@ You can also build it yourself with `python tools/make_zip.py --with-python`.
 | Module | Presets | What it shows |
 |---|---|---|
 | **Fractal Lab** | 6 | Mandelbrot, Julia (live morphing), Newton's method — zoom in forever |
-| **Function Plotter** | 4 | Trig / quadratic curves, Riemann sums, area under a curve — with real fill |
+| **Function Plotter** | 5 | Trig / quadratic curves, Riemann sums, area under a curve, custom expressions — with real fill |
 | **Vector Field** | 4 | Vortex, attractor, dipole, twin vortices — arrows + RK4 streamlines, colour = speed |
 | **3D Geometry** | 4 | Sphere, torus, Möbius strip, icosahedron — orbit camera with perspective |
 | **Stochastic Processes** | 3 | Law of large numbers, central limit theorem, random walk — all seeded |
+| **Fourier Series** | 3 | Square / sawtooth / triangle waves built from sine harmonics, term by term (Gibbs phenomenon included) |
+| **Linear Maps** | 4 | Rotate / shear / scale / singular: the grid follows the matrix, fill area = \|det\|, negative det flips the colour |
 
 The UI is bilingual (switch with 中 / EN in the top-left). Drag to pan, scroll to zoom,
 double-click to reset — in the 3D module, dragging orbits the object instead.
 Every module has **Export PNG** (offscreen pixel read-back, not a canvas screenshot), a
-**Play** button that animates the parameters, and **Record video**, which captures that
-animation to a WebM file (browser-native VP9 via `captureStream` + `MediaRecorder` —
-no third-party libraries, and the duration metadata is patched in on save).
+**Play** button that animates the parameters, and two animation exporters: **Record video**
+captures that animation to a WebM file in real time (browser-native VP9 via `captureStream` +
+`MediaRecorder` — no third-party libraries, duration metadata patched in on save), and
+**Export GIF** renders one full animation loop offscreen and encodes it with a
+hand-written, dependency-free GIF89a encoder (median-cut palette + Floyd–Steinberg dithering
++ LZW) so it loops automatically anywhere you paste it.

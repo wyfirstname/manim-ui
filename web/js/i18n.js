@@ -28,6 +28,8 @@ const DICT = {
         'module.field': '向量场流线',
         'module.solid': '三维几何',
         'module.random': '随机过程',
+        'module.fourier': '傅里叶级数',
+        'module.matrix': '线性变换',
 
         'hint.canvas': '拖拽平移 · 滚轮缩放 · 双击复位',
 
@@ -37,6 +39,8 @@ const DICT = {
         'section.display': '显示',
         'section.shape': '形状',
         'section.material': '材质',
+        'section.matrix': '矩阵',
+        'section.wave': '波形',
 
         'ctrl.steps': '迭代步数',
         'ctrl.re': '实部 c',
@@ -90,6 +94,24 @@ const DICT = {
         'ctrl.showBand': '显示收敛带',
         'ctrl.showCircle': '显示典型距离圆',
 
+        'ctrl.terms': '谐波项数 N',
+        'ctrl.amplitude': '振幅',
+        'ctrl.showTarget': '显示目标波形',
+        'ctrl.showHarmonics': '显示各次谐波',
+
+        'ctrl.angle': '旋转角 θ',
+        'ctrl.shear': '剪切量 k',
+        'ctrl.scaleX': '横向缩放 sx',
+        'ctrl.scaleY': '纵向缩放 sy',
+        'ctrl.matrixA': 'a（ê₁ 的横坐标）',
+        'ctrl.matrixB': 'b（ê₂ 的横坐标）',
+        'ctrl.matrixC': 'c（ê₁ 的纵坐标）',
+        'ctrl.matrixD': 'd（ê₂ 的纵坐标）',
+        'ctrl.matrixT': '动画进度 t',
+        'ctrl.showOriginal': '显示原网格 / 单位正方形',
+        'ctrl.showGrid': '显示变换后网格',
+        'ctrl.showVectors': '显示基向量箭头',
+
         'btn.export': '导出 PNG',
         'btn.exporting': '导出中…',
         'btn.reset': '重置视图',
@@ -97,6 +119,8 @@ const DICT = {
         'btn.pause': '⏸ 暂停',
         'btn.record': '● 录制动画',
         'btn.recording': '■ 停止并保存（{s}s）',
+        'btn.gif': '导出 GIF',
+        'btn.gifWorking': '导出 GIF… {pct}%',
         'record.unsupported': '当前浏览器不支持动画录制',
         'record.noplay': '该模块没有动画可录',
 
@@ -119,6 +143,9 @@ const DICT = {
         'log.recordUnsupported': '当前浏览器不支持动画录制',
         'log.recordNoPlay': '该模块没有动画可录',
         'log.recordLimit': '已达录制上限 {s}s，自动保存',
+        'log.gifStart': '正在逐帧渲染 {n} 帧…',
+        'log.gifDone': '已导出 {name}（{n} 帧，{size}，耗时 {s}s）',
+        'log.gifFail': 'GIF 导出失败：{msg}',
 
         'fatal.secure.title': '不在安全上下文中',
         'fatal.secure.body': 'WebGPU 需要 https 或 http://localhost 环境。<br>请通过<b>启动.bat</b> 打开，不要直接双击 HTML 文件。',
@@ -191,6 +218,22 @@ const DICT = {
         'preset.clt.hint': 'n 个均匀随机变量之和标准化后趋于钟形，拖动 n 或点播放看它一步步变成正态分布',
         'preset.walk.name': '随机游走',
         'preset.walk.hint': '每步随机选一个方向，n 步后离原点的典型距离约为 √n · 步长（灰圈）',
+
+        'preset.square.name': '方波',
+        'preset.square.hint': '只用奇次谐波、系数按 1/k 衰减；跳变处那条压不平的小尖叫吉布斯现象',
+        'preset.sawtooth.name': '锯齿波',
+        'preset.sawtooth.hint': '所有次数都上场，系数也按 1/k 衰减 —— 收敛一样慢，一样有过冲',
+        'preset.triangle.name': '三角波',
+        'preset.triangle.hint': '折线是连续的，系数按 1/k² 衰减 —— 只要几项就贴得很紧，且完全没有过冲',
+
+        'preset.rotate.name': '旋转',
+        'preset.rotate.hint': 'det = 1：面积不变，平面整体转过去；两列就是 ê₁ ê₂ 转到的位置',
+        'preset.shear.name': '剪切',
+        'preset.shear.hint': 'det = 1：面积同样不变，但形状被推歪 —— 面积不变量只管大小不管形状',
+        'preset.scale2d.name': '缩放',
+        'preset.scale2d.hint': 'det = sx·sy：正方形面积按这个倍数变；某轴取负数就会把平面翻面',
+        'preset.singular.name': '奇异矩阵（det = 0）',
+        'preset.singular.hint': '整个平面被拍扁成一条直线，信息丢了就找不回来 —— 这正是没有逆矩阵的含义',
     },
 
     en: {
@@ -207,6 +250,8 @@ const DICT = {
         'module.field': 'Vector Field Streamlines',
         'module.solid': '3D Geometry',
         'module.random': 'Stochastic Processes',
+        'module.fourier': 'Fourier Series',
+        'module.matrix': 'Linear Transformations',
 
         'hint.canvas': 'Drag to pan · scroll to zoom · double-click to reset',
 
@@ -216,6 +261,8 @@ const DICT = {
         'section.display': 'Display',
         'section.shape': 'Shape',
         'section.material': 'Material',
+        'section.matrix': 'Matrix',
+        'section.wave': 'Waveform',
 
         'ctrl.steps': 'Iterations',
         'ctrl.re': 'Real part c',
@@ -269,6 +316,24 @@ const DICT = {
         'ctrl.showBand': 'Show convergence band',
         'ctrl.showCircle': 'Show typical-distance circle',
 
+        'ctrl.terms': 'Harmonics N',
+        'ctrl.amplitude': 'Amplitude',
+        'ctrl.showTarget': 'Show target waveform',
+        'ctrl.showHarmonics': 'Show individual harmonics',
+
+        'ctrl.angle': 'Rotation angle θ',
+        'ctrl.shear': 'Shear k',
+        'ctrl.scaleX': 'Horizontal scale sx',
+        'ctrl.scaleY': 'Vertical scale sy',
+        'ctrl.matrixA': 'a (x-coord of ê₁)',
+        'ctrl.matrixB': 'b (x-coord of ê₂)',
+        'ctrl.matrixC': 'c (y-coord of ê₁)',
+        'ctrl.matrixD': 'd (y-coord of ê₂)',
+        'ctrl.matrixT': 'Animation progress t',
+        'ctrl.showOriginal': 'Show original grid & unit square',
+        'ctrl.showGrid': 'Show transformed grid',
+        'ctrl.showVectors': 'Show basis vectors',
+
         'btn.export': 'Export PNG',
         'btn.exporting': 'Exporting…',
         'btn.reset': 'Reset view',
@@ -276,6 +341,8 @@ const DICT = {
         'btn.pause': '⏸ Pause',
         'btn.record': '● Record video',
         'btn.recording': '■ Stop & save ({s}s)',
+        'btn.gif': 'Export GIF',
+        'btn.gifWorking': 'Exporting GIF… {pct}%',
         'record.unsupported': 'Video recording is not supported in this browser',
         'record.noplay': 'This module has no animation to record',
 
@@ -298,6 +365,9 @@ const DICT = {
         'log.recordUnsupported': 'Video recording is not supported in this browser',
         'log.recordNoPlay': 'This module has no animation to record',
         'log.recordLimit': 'Reached the {s}s limit, saved automatically',
+        'log.gifStart': 'Rendering {n} frames…',
+        'log.gifDone': 'Saved {name} ({n} frames, {size}, in {s}s)',
+        'log.gifFail': 'GIF export failed: {msg}',
 
         'fatal.secure.title': 'Not a secure context',
         'fatal.secure.body': 'WebGPU requires https or http://localhost.<br>Please open this app via <b>启动.bat</b> instead of double-clicking the HTML file.',
@@ -370,6 +440,22 @@ const DICT = {
         'preset.clt.hint': 'A standardised sum of n uniform variables turns into a bell — drag n or press play to watch it happen',
         'preset.walk.name': 'Random Walk',
         'preset.walk.hint': 'Each step picks a random direction; after n steps the typical distance is ≈ √n · step length (grey circle)',
+
+        'preset.square.name': 'Square Wave',
+        'preset.square.hint': 'Odd harmonics only, decaying like 1/k; the little spike at each jump is the Gibbs phenomenon',
+        'preset.sawtooth.name': 'Sawtooth Wave',
+        'preset.sawtooth.hint': 'Every harmonic appears, still decaying like 1/k — equally slow, and it overshoots too',
+        'preset.triangle.name': 'Triangle Wave',
+        'preset.triangle.hint': 'A continuous zigzag, decaying like 1/k² — a handful of terms suffice, with no overshoot at all',
+
+        'preset.rotate.name': 'Rotation',
+        'preset.rotate.hint': 'det = 1: area is preserved and the plane simply turns; the columns are where ê₁ and ê₂ land',
+        'preset.shear.name': 'Shear',
+        'preset.shear.hint': 'det = 1: area preserved again, but the shape is pushed sideways — area says nothing about shape',
+        'preset.scale2d.name': 'Scaling',
+        'preset.scale2d.hint': 'det = sx·sy: the unit square scales by exactly that factor; a negative axis flips the plane over',
+        'preset.singular.name': 'Singular Matrix (det = 0)',
+        'preset.singular.hint': 'The whole plane collapses onto a single line — information is lost for good, which is what "no inverse" means',
     },
 };
 
