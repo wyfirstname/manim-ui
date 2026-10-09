@@ -9,9 +9,8 @@ manim 是 3Blue1Brown 用来做数学动画的引擎，它内部用 WGSL 写了�
 
 纯前端 + 一个零依赖的 Python 静态服务器。中英双语界面（右上角 中 / EN 切换，语言自动记忆）。
 
-> **想直接用？** 下载打包好的 `manim-ui-portable.zip`（约 15 MB，内置便携 Python），
-> 解压双击 `启动.bat` 即可，无需安装任何东西：
-> <https://pan.baidu.com/s/1hhruk-omlsC7cVMUxi5Lsw?pwd=cjq1> （提取码 `cjq1`）
+> 📦 **想直接用？** 免安装绿色包（约 15 MB，内置便携 Python）见下方
+> **「安装与启动 → 方式 A：绿色版」**，扫码阅读公众号文章即可获取。
 
 |  |  |
 |---|---|
@@ -102,11 +101,7 @@ manim 是 3Blue1Brown 用来做数学动画的引擎，它内部用 WGSL 写了�
 
 ### 方式 A：绿色版（免安装，推荐）
 
-下载 `manim-ui-portable.zip`（约 15 MB，内含便携 Python）：
-
-<https://pan.baidu.com/s/1hhruk-omlsC7cVMUxi5Lsw?pwd=cjq1> （提取码 `cjq1`）
-
-> 📦 **绿色安装包也放在下面这篇公众号文章里，扫码阅读即可获取 👇**
+> 📦 **绿色安装包放在下面这篇公众号文章里，扫码阅读即可获取 👇**
 
 <div align="center">
 
@@ -1004,9 +999,9 @@ python server/serve.py            # or double-click 启动.bat on Windows
 
 Then open <http://127.0.0.1:7788/>.
 
-**Easiest path:** grab `manim-ui-portable.zip` (≈15 MB) — it bundles its own portable Python, so
-it's unzip → double-click `启动.bat` → done (no install, no network needed):
-<https://pan.baidu.com/s/1hhruk-omlsC7cVMUxi5Lsw?pwd=cjq1> (passcode `cjq1`).
+**Easiest path:** the prebuilt `manim-ui-portable.zip` (≈15 MB, bundles its own portable Python)
+is shared through the WeChat article linked in 方式 A above — scan the QR code there to get it
+(unzip → double-click `启动.bat` → done; no install, no network needed).
 You can also build it yourself with `python tools/make_zip.py --with-python`.
 
 > **Do not open `web/index.html` directly.** WebGPU requires a secure context
